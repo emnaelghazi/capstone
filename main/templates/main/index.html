@@ -14,7 +14,7 @@
       content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0"
     />
 
-    <title>GeoAtlas</title>
+    <title>GeoSmart</title>
 
     <meta name="description" content="" />
 
@@ -58,6 +58,331 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
+    <style>
+      .right-modal {
+        position: absolute;  
+        right: -500px;
+        top: 0;
+        width: 500px;
+        height: 100%;
+        background: white;
+        z-index: 1000;
+        transition: transform 0.3s ease-in-out;
+        box-shadow: -2px 0 5px rgba(0,0,0,0.2);
+      }
+
+      .right-modal.show {
+        transform: translateX(-500px);
+      }
+
+      .right-modal-content {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .right-modal-header {
+        padding: 1rem;
+        border-bottom: 1px solid #dee2e6;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .right-modal-body {
+        padding: 1rem;
+        flex: 1;
+        overflow-y: auto;
+      }
+
+      .slide-arrow {
+        position: absolute;
+        left: -30px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 30px;
+        height: 60px;
+        background: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        border-radius: 5px 0 0 5px;
+        box-shadow: -2px 0 5px rgba(0,0,0,0.2);
+      }
+
+      .location-info {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem;
+      }
+
+      .info-grid {
+        display: grid;
+        gap: 1rem;
+      }
+
+      .info-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem;
+        background: white;
+        border-radius: 4px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      }
+
+      .info-label {
+        color: #6c757d;
+        font-weight: 500;
+      }
+
+      .info-value {
+        font-weight: 600;
+        color: #696cff;
+      }
+
+      .nav-tabs .nav-link {
+        color: #6c757d;
+        border: none;
+        padding: 0.5rem 1rem;
+        margin-right: 0.5rem;
+        border-radius: 4px;
+      }
+
+      .nav-tabs .nav-link.active {
+        color: #696cff;
+        background: rgba(105, 108, 255, 0.1);
+        border: none;
+      }
+
+      .nav-tabs .nav-link i {
+        margin-right: 0.5rem;
+      }
+
+      .chart-container {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+      }
+
+      .marker-list {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem;
+      }
+
+      .marker-list h6 {
+        color: #566a7f;
+        font-weight: 500;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .marker-list h6 i {
+        font-size: 1.2rem;
+        color: #696cff;
+      }
+
+      .marker-item {
+        background: #fff;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 0.75rem;
+        transition: all 0.2s;
+      }
+
+      .marker-item:hover {
+        border-color: #696cff;
+        box-shadow: 0 0 0 4px rgba(105, 108, 255, 0.08);
+      }
+
+      .marker-title {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.75rem;
+      }
+
+      .marker-title h6 {
+        margin: 0;
+        color: #566a7f;
+        font-weight: 500;
+      }
+
+      .marker-coords {
+        font-size: 0.875rem;
+        color: #697a8d;
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 0.5rem;
+        margin-bottom: 0.75rem;
+      }
+
+      .marker-actions {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: flex-end;
+      }
+
+      .btn-marker-action {
+        padding: 0.25rem 0.75rem;
+        font-size: 0.875rem;
+      }
+
+      /* Layer Info Styling */
+      .chart-container {
+        background: #fff;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+      }
+
+      .stat-item {
+        background: #f5f5f9;
+        padding: 1rem;
+        border-radius: 8px;
+        text-align: center;
+      }
+
+      .stat-label {
+        color: #697a8d;
+        font-size: 0.875rem;
+        margin-bottom: 0.5rem;
+        display: block;
+      }
+
+      .stat-value {
+        color: #566a7f;
+        font-weight: 500;
+        font-size: 1.25rem;
+      }
+
+      /* Add styles for the info box */
+      .info-box {
+        padding: 10px;
+        background: white;
+        background: rgba(255,255,255,0.95);
+        box-shadow: 0 0 15px rgba(0,0,0,0.2);
+        border-radius: 5px;
+        max-width: 250px;
+      }
+
+      .info-box h4 {
+        margin: 0 0 5px;
+        color: #777;
+        font-weight: bold;
+      }
+
+      .info-box .highlight {
+        background: #696cff;
+        color: white;
+        padding: 2px 5px;
+        border-radius: 3px;
+        margin: 2px 0;
+        display: inline-block;
+      }
+
+      .info-box .info-row {
+        margin: 5px 0;
+        display: flex;
+        justify-content: space-between;
+        border-bottom: 1px solid #eee;
+        padding: 3px 0;
+      }
+
+      .info-box .info-label {
+        color: #666;
+        font-weight: 500;
+      }
+
+      .info-box .info-value {
+        color: #333;
+        font-weight: 600;
+      }
+
+      /* Style for the legend */
+      .legend {
+        line-height: 18px;
+        color: #555;
+        background: white;
+        background: rgba(255,255,255,0.95);
+        padding: 10px;
+        border-radius: 5px;
+        box-shadow: 0 0 15px rgba(0,0,0,0.2);
+      }
+
+      .legend i {
+        width: 18px;
+        height: 18px;
+        float: left;
+        margin-right: 8px;
+        opacity: 0.7;
+      }
+
+      /* Year slider styles */
+      .year-slider-container {
+          padding: 1rem;
+          margin: 1rem 0;
+          text-align: center;
+          background: rgba(105, 108, 255, 0.08);
+          border-radius: 8px;
+          position: relative;
+      }
+
+      .year-slider {
+          -webkit-appearance: none;
+          width: 100%;
+          height: 4px;
+          border-radius: 5px;
+          background: #e7e7ff;
+          outline: none;
+          margin: 1rem 0;
+      }
+
+      .year-slider::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          background: #696cff;
+          cursor: pointer;
+          box-shadow: 0 0 5px rgba(105, 108, 255, 0.3);
+          transition: all 0.2s ease;
+      }
+
+      .year-slider::-webkit-slider-thumb:hover {
+          transform: scale(1.2);
+          box-shadow: 0 0 10px rgba(105, 108, 255, 0.5);
+      }
+
+      .year-display {
+          font-size: 1.2rem;
+          font-weight: 600;
+          color: #696cff;
+          margin-top: 0.5rem;
+      }
+
+      .ndvi-info {
+          padding: 1rem;
+      }
+
+      .ndvi-chart-container {
+          margin-top: 1rem;
+      }
+    </style>
   </head>
 
   <body>
@@ -68,12 +393,8 @@
 
         <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
           <div class="app-brand demo">
-            <a href="index.html" class="app-brand-link">
-              <span class="app-brand-logo demo">
-                <!-- Replace this with your logo image -->
-                <img src="../static/img/favicon/Logo44_4.png" alt="Sneat Logo" width="25"> <!-- You can adjust the width or add other styling as needed -->
-              </span>
-              <span class="app-brand-text demo menu-text fw-bolder ms-2">GeoAtlas</span>
+            <a href="{% url 'index' %}" class="app-brand-link">
+              <span class=" demo menu-text fw-bolder ms-2" style="font-family: 'Montserrat', sans-serif;  font-size: 2rem;">Geosmart</span>
             </a>
             <style>
               /* Apply Montserrat with thin weight to the link text */
@@ -92,7 +413,7 @@
           <ul class="menu-inner py-1">
             <!-- Map -->
             <li class="menu-item active">
-              <a href="index.html" class="menu-link">
+              <a href="{% url 'index' %}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-map map-icon"></i>
                 <div data-i18n="Analytics">Map</div>
               </a>
@@ -102,61 +423,44 @@
             <li class="menu-item">
               <a href="javascript:void(0);" class="menu-link menu-toggle">
                 <i class="menu-icon tf-icons bx bx-layout"></i>
-                <div data-i18n="Layouts">Layouts</div>
+                <div data-i18n="Layouts">Countries</div>
               </a>
 
               <ul class="menu-sub">
                 <li class="menu-item">
-                  <a href="layouts-without-menu.html" class="menu-link">
-                    <div data-i18n="Without menu">Without menu</div>
-                  </a>
-                </li>
-                <li class="menu-item">
-                  <a href="layouts-without-navbar.html" class="menu-link">
-                    <div data-i18n="Without navbar">Without navbar</div>
-                  </a>
-                </li>
-                <li class="menu-item">
-                  <a href="layouts-container.html" class="menu-link">
-                    <div data-i18n="Container">Container</div>
-                  </a>
-                </li>
-                <li class="menu-item">
-                  <a href="layouts-fluid.html" class="menu-link">
-                    <div data-i18n="Fluid">Fluid</div>
-                  </a>
-                </li>
-                <li class="menu-item">
-                  <a href="layouts-blank.html" class="menu-link">
-                    <div data-i18n="Blank">Blank</div>
+                  <a href="#" class="menu-link" id="tunisia-layer">
+                    <div data-i18n="Tunisia">Tunisia</div>
                   </a>
                 </li>
               </ul>
             </li>
-
+            
             <li class="menu-header small text-uppercase">
               <span class="menu-header-text">Layers</span>
             </li>
             
             <li class="menu-item">
               <a href="javascript:void(0);" class="menu-link menu-toggle">
-                <i class="menu-icon tf-icons bx bx-tractor"></i>
-                <div data-i18n="Account Settings">Agriculture</div>
+                <i class="menu-icon tf-icons bx bx-image"></i>
+                <div data-i18n="Agriculture">Agriculture</div>
               </a>
               <ul class="menu-sub">
                 <li class="menu-item">
                   <a href="#" class="menu-link" id="agriculture-layer1">
-                    <div data-i18n="Account">MODIS NDVI (8 Day)</div>
+                    <i class="menu-icon tf-icons bx bx-chart"></i>
+                    <div data-i18n="Account">NDVI</div>
                   </a>
                 </li>
                 <li class="menu-item">
                   <a href="#" class="menu-link" id="agriculture-layer2">
-                    <div data-i18n="Notifications">Layer2</div>
+                    <i class="menu-icon tf-icons bx bx-line-chart"></i>
+                    <div data-i18n="Notifications">MODIS EVI (8 Day)</div>
                   </a>
                 </li>
                 <li class="menu-item">
                   <a href="#" class="menu-link" id="agriculture-layer3">
-                    <div data-i18n="Connections">Layer3</div>
+                    <i class="menu-icon tf-icons bx bx-sun"></i>
+                    <div data-i18n="Connections">MODIS Land Surface Temperature (Day)</div>
                   </a>
                 </li>
               </ul>
@@ -164,23 +468,26 @@
             
             <li class="menu-item">
               <a href="javascript:void(0);" class="menu-link menu-toggle">
-                <i class="menu-icon tf-icons bx bx-wallet"></i>
-                <div data-i18n="Account Settings">Poverty</div>
+                <i class="menu-icon tf-icons bx bx-home-alt"></i>
+                <div data-i18n="Poverty">Poverty</div>
               </a>
               <ul class="menu-sub">
                 <li class="menu-item">
                   <a href="#" class="menu-link" id="poverty-layer1">
-                    <div data-i18n="Account">Layer1</div>
+                    <i class="menu-icon tf-icons bx bx-image"></i>
+                    <div data-i18n="Account">MODIS Corrected Reflectance (True Color)</div>
                   </a>
                 </li>
                 <li class="menu-item">
                   <a href="#" class="menu-link" id="poverty-layer2">
-                    <div data-i18n="Notifications">Layer2</div>
+                    <i class="menu-icon tf-icons bx bx-cloud"></i>
+                    <div data-i18n="Notifications">MODIS Snow Cover</div>
                   </a>
                 </li>
                 <li class="menu-item">
                   <a href="#" class="menu-link" id="poverty-layer3">
-                    <div data-i18n="Connections">Layer3</div>
+                    <i class="menu-icon tf-icons bx bx-cloud-lightning"></i>
+                    <div data-i18n="Connections">MODIS Cloud Top Temperature (Day)</div>
                   </a>
                 </li>
               </ul>
@@ -189,27 +496,82 @@
             <li class="menu-item">
               <a href="javascript:void(0);" class="menu-link menu-toggle">
                 <i class="menu-icon tf-icons bx bx-water"></i>
-                <div data-i18n="Account Settings">Water</div>
+                <div data-i18n="Water">Water</div>
               </a>
               <ul class="menu-sub">
                 <li class="menu-item">
                   <a href="#" class="menu-link" id="water-layer1">
-                    <div data-i18n="Account">Layer1</div>
+                    <i class="menu-icon tf-icons bx bx-map"></i>
+                    <div data-i18n="Account">MODIS Land Water Mask</div>
                   </a>
                 </li>
                 <li class="menu-item">
                   <a href="#" class="menu-link" id="water-layer2">
-                    <div data-i18n="Notifications">Layer2</div>
+                    <i class="menu-icon tf-icons bx bx-glacier"></i>
+                    <div data-i18n="Notifications">MODIS Sea Ice</div>
                   </a>
                 </li>
                 <li class="menu-item">
                   <a href="#" class="menu-link" id="water-layer3">
-                    <div data-i18n="Connections">Layer3</div>
+                    <i class="menu-icon tf-icons bx bx-reflect-horizontal"></i>
+                    <div data-i18n="Connections">MODIS Surface Reflectance (Bands 1, 2, 1)</div>
                   </a>
                 </li>
               </ul>
             </li>
             
+            <li class="menu-item">
+              <a href="javascript:void(0);" class="menu-link menu-toggle">
+                <i class="menu-icon tf-icons bx bx-compass"></i>
+                <div data-i18n="Tourism">Tourism</div>
+              </a>
+              <ul class="menu-sub">
+                <li class="menu-item">
+                  <a href="#" class="menu-link" id="tourism-layer1">
+                    <i class="menu-icon tf-icons bx bx-compass"></i>
+                    <div data-i18n="Account">Tourism Sites</div>
+                  </a>
+                </li>
+              </ul>
+            </li>
+            
+            <li class="menu-item">
+              <a href="javascript:void(0);" class="menu-link menu-toggle">
+                <i class="menu-icon tf-icons bx bx-cloud-rain"></i>
+                <div data-i18n="Drought">Drought</div>
+              </a>
+              <ul class="menu-sub">
+                <li class="menu-item">
+                  <a href="#" class="menu-link" id="drought-layer1">
+                    <i class="menu-icon tf-icons bx bx-cloud-rain"></i>
+                    <div data-i18n="Account">Drought Areas</div>
+                  </a>
+                </li>
+              </ul>
+            </li>
+            
+            <li class="menu-item">
+              <a href="javascript:void(0);" class="menu-link menu-toggle">
+                <i class="menu-icon tf-icons bx bx-landscape"></i>
+                <div data-i18n="Desertification">Desertification</div>
+              </a>
+              <ul class="menu-sub">
+                <li class="menu-item">
+                  <a href="#" class="menu-link" id="desert-layer1">
+                    <i class="menu-icon tf-icons bx bx-landscape"></i>
+                    <div data-i18n="Account">Desertification Areas</div>
+                  </a>
+                </li>
+              </ul>
+            </li>
+            
+            <!-- User -->
+            <li class="menu-item">
+              <a href="{% url 'logout' %}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-log-out"></i>
+                <div data-i18n="Logout">Logout</div>
+              </a>
+            </li>
           </ul>
         </aside>
         <!-- / Menu -->
@@ -238,25 +600,14 @@
                     class="form-control border-0 shadow-none"
                     placeholder="Search..."
                     aria-label="Search..."
+                    id="searchInput"
+                    onkeyup="filterLayers(this.value)"
                   />
                 </div>
               </div>
               <!-- /Search -->
 
               <ul class="navbar-nav flex-row align-items-center ms-auto">
-                <!-- Place this tag where you want the button to render. -->
-                <li class="nav-item lh-1 me-3">
-                  <a
-                    class="github-button"
-                    href="https://github.com/themeselection/sneat-html-admin-template-free"
-                    data-icon="octicon-star"
-                    data-size="large"
-                    data-show-count="true"
-                    aria-label="Star themeselection/sneat-html-admin-template-free on GitHub"
-                    >Star</a
-                  >
-                </li>
-
                 <!-- User -->
                 <li class="nav-item navbar-dropdown dropdown-user dropdown">
                   <a class="nav-link dropdown-toggle hide-arrow" href="javascript:void(0);" data-bs-toggle="dropdown">
@@ -274,8 +625,8 @@
                             </div>
                           </div>
                           <div class="flex-grow-1">
-                            <span class="fw-semibold d-block">John Doe</span>
-                            <small class="text-muted">Admin</small>
+                            <span class="fw-semibold d-block">{{ request.user.username }}</span>
+                            <small class="text-muted">Member</small>
                           </div>
                         </div>
                       </a>
@@ -308,7 +659,7 @@
                       <div class="dropdown-divider"></div>
                     </li>
                     <li>
-                      <a class="dropdown-item" href="auth-login-basic.html">
+                      <a class="dropdown-item" href="{% url 'logout' %}">
                         <i class="bx bx-power-off me-2"></i>
                         <span class="align-middle">Log Out</span>
                       </a>
@@ -319,7 +670,6 @@
               </ul>
             </div>
           </nav>
-
           <!-- / Navbar -->
 
           <!-- Content wrapper -->
@@ -332,214 +682,1027 @@
                 <div class="col-md-6 col-lg-12 col-xl-12 order-0 mb-4">
                   <div class="card h-100">
                     
-                    <div class="card-body">
+                    <div class="card-body" style="padding: 0;">
                         <!-- Replace this section with the map container -->
-                        <div id="map" style="height: 650px; width: 100%;"></div>
+                        <div id="map" style="height: calc(100vh - 100px); width: 100%; border-radius: 0.5rem; overflow: hidden;"></div>
                     </div>
                 </div>
                 <script>
-                  document.addEventListener("DOMContentLoaded", function () {
-                    // Initialize the map
-                    var map = L.map('map').setView([36.5, 10.5], 8);
-                
-                    // Add a base layer
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                      attribution: '&copy; OpenStreetMap contributors',
-                    }).addTo(map);
-                
-                    // Define layers for Agriculture
-                    var agricultureLayer1 = L.tileLayer.wms('https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi', {
-                      layers: 'MODIS_Terra_NDVI_8Day',
-                      format: 'image/png',
-                      transparent: true,
-                      attribution: '&copy; NASA EarthData',
-                    });
-                
-                    var agricultureLayer2 = L.tileLayer.wms('https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi', {
-                      layers: 'MODIS_Terra_Thermal_Anomalies_Day',
-                      format: 'image/png',
-                      transparent: true,
-                      attribution: '&copy; OpenLandMap',
-                    });
-                
-                    var agricultureLayer3 = L.tileLayer.wms('https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi', {
-                      layers: 'OrbitTracks_NOAA-21_Ascending_Points',
-                      format: 'image/png',
-                      transparent: true,
-                      attribution: '&copy; SEDAC Crop Suitability',
-                    });
-                    
-                    // Define layers for Poverty
-                    var povertyLayer1 = L.tileLayer.wms('https://sedac.ciesin.columbia.edu/geoserver/wms', {
-                      layers: 'poverty_estimates',
-                      format: 'image/png',
-                      transparent: true,
-                      attribution: '&copy; SEDAC Poverty Data',
-                    });
-                    
-                    var povertyLayer2 = L.tileLayer.wms('https://some-other-poverty-layer-source.com/wms', {
-                      layers: 'poverty_index',
-                      format: 'image/png',
-                      transparent: true,
-                      attribution: '&copy; Poverty Layer 2 Source',
-                    });
-                    
-                    var povertyLayer3 = L.tileLayer.wms('https://example.com/geoserver/wms', {
-                      layers: 'poverty_population',
-                      format: 'image/png',
-                      transparent: true,
-                      attribution: '&copy; Poverty Layer 3 Source',
-                    });
-                
-                    // Define layers for Water
-                    var waterLayer1 = L.tileLayer.wms('https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi', {
-                      layers: 'MODIS_Terra_L3_Land_Water_Mask',  // Correct layer name
-                      format: 'image/png',
-                      transparent: true,
-                      attribution: '&copy; NASA EarthData',
-                    });
-                
-                    var waterLayer2 = L.tileLayer.wms('https://example.com/water-layer-2/wms', {
-                      layers: 'water_availability',
-                      format: 'image/png',
-                      transparent: true,
-                      attribution: '&copy; Water Layer 2 Source',
-                    });
-                
-                    var waterLayer3 = L.tileLayer.wms('https://some-other-source.com/wms', {
-                      layers: 'water_quality',
-                      format: 'image/png',
-                      transparent: true,
-                      attribution: '&copy; Water Layer 3 Source',
-                    });
-                
-                    // Chart container
-                    var ctx = document.getElementById('myChart').getContext('2d');
-                    var myChart = new Chart(ctx, {
-                      type: 'bar',
-                      data: {
-                        labels: ['January', 'February', 'March', 'April', 'May'], // Example months
-                        datasets: [{
-                          label: 'Agriculture Data',
-                          data: [65, 59, 80, 81, 56], // Sample data for Agriculture
-                          backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                          borderColor: 'rgba(255, 99, 132, 1)',
-                          borderWidth: 1
-                        }]
-                      },
-                      options: {
-                        responsive: true,
-                        scales: {
-                          y: {
-                            beginAtZero: true
+                  // Global variables for map and layers
+                  let map;
+                  let tunisiaLayer;
+                  let ndviLayer2020;
+                  let ndviLayer2021;
+                  let ndviLayer2022;
+                  let ndviLayer2023;
+                  let info;
+                  let legend;
+                  let currentNdviLayer = null;
+                  let tourismLayer = null;
+                  let droughtLayer = null;
+                  let desertLayer = null;
+
+                  // Initialize the map only if it hasn't been initialized yet
+                  if (!map) {
+                      // 1. Initialize base map
+                      map = L.map('map').setView([34.0, 9.5], 7);
+                      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                          maxZoom: 19,
+                          attribution: ' OpenStreetMap contributors'
+                      }).addTo(map);
+
+                      // Initialize NDVI layers for each year
+                      const ndviLayer2020 = L.tileLayer.wms('http://localhost:8080/geoserver/ne/wms', {
+                          layers: 'ne:2020',
+                          format: 'image/png',
+                          transparent: true,
+                          version: '1.1.0',
+                          styles: 'ne:NDVI_2020_Style'
+                      });
+
+                      const ndviLayer2021 = L.tileLayer.wms('http://localhost:8080/geoserver/ne/wms', {
+                          layers: 'ne:2021',
+                          format: 'image/png',
+                          transparent: true,
+                          version: '1.1.0',
+                          styles: 'ne:NDVI_2021_Style'
+                      });
+
+                      const ndviLayer2022 = L.tileLayer.wms('http://localhost:8080/geoserver/ne/wms', {
+                          layers: 'ne:2022',
+                          format: 'image/png',
+                          transparent: true,
+                          version: '1.1.0',
+                          styles: 'ne:NDVI_2022_Style'
+                      });
+
+                      const ndviLayer2023 = L.tileLayer.wms('http://localhost:8080/geoserver/ne/wms', {
+                          layers: 'ne:2023',
+                          format: 'image/png',
+                          transparent: true,
+                          version: '1.1.0',
+                          styles: 'ne:NDVI_2023_Style'
+                      });
+
+                      // 2. Create and add Tunisia layer
+                      tunisiaLayer = L.tileLayer.wms('http://localhost:8080/geoserver/ne/wms', {
+                          layers: 'ne:Gouvernorats_TN',
+                          format: 'image/png',
+                          transparent: true,
+                          styles: 'Gouvernorats_TN_Style',
+                          version: '1.1.0'
+                      });
+                      tunisiaLayer.bringToFront();
+
+                      // 3. Create and add info control
+                      info = L.control();
+                      info.onAdd = function(map) {
+                          this._div = L.DomUtil.create('div', 'info-box');
+                          this.update();
+                          return this._div;
+                      };
+
+                      info.update = function(props) {
+                          this._div.innerHTML = props ? `
+                              <h4>${props.name_fr || 'Unknown'}</h4>
+                              <div class="info-row">
+                                  <span class="info-label">Reference Code:</span>
+                                  <span class="info-value">${props.REF_TN_COD || 'N/A'}</span>
+                              </div>
+                              ${props.additional_info ? `
+                                  <div class="info-row">
+                                      <span class="info-label">Additional Info:</span>
+                                      <span class="info-value">${props.additional_info}</span>
+                                  </div>
+                              ` : ''}
+                          ` : 'Hover over a governorate';
+                      };
+                      info.addTo(map);
+
+                      // 4. Create and add legend
+                      legend = L.control({position: 'bottomright'});
+                      legend.onAdd = function(map) {
+                          const div = L.DomUtil.create('div', 'legend');
+                          div.innerHTML = `
+                              <h4>Governorates</h4>
+                              <i style="background: #696cff"></i> Selected<br>
+                              <i style="background: #f8f9fa"></i> Default<br>
+                          `;
+                          return div;
+                      };
+                      legend.addTo(map);
+
+                      // 5. Add mousemove event for hover effect
+                      map.on('mousemove', function(e) {
+                          if (map.hasLayer(tunisiaLayer)) {
+                              getFeatureInfo(e, 'hover', 'ne:Gouvernorats_TN');
+                          } else if (currentNdviLayer) {
+                              getFeatureInfo(e, 'hover', currentNdviLayer.options.layers);
+                          } else if (map.hasLayer(tourismLayer)) {
+                              getFeatureInfo(e, 'hover', 'ne:tourism_sites');
+                          } else if (map.hasLayer(droughtLayer)) {
+                              getFeatureInfo(e, 'hover', 'ne:drought_areas');
+                          } else if (map.hasLayer(desertLayer)) {
+                              getFeatureInfo(e, 'hover', 'ne:desertification');
                           }
-                        }
+                      });
+
+                      // 6. Add click handler for modal
+                      map.on('click', function(e) {
+                          if (map.hasLayer(tunisiaLayer)) {
+                              getFeatureInfo(e, 'click', 'ne:Gouvernorats_TN');
+                          } else if (currentNdviLayer) {
+                              getFeatureInfo(e, 'click', currentNdviLayer.options.layers);
+                          } else if (map.hasLayer(tourismLayer)) {
+                              getFeatureInfo(e, 'click', 'ne:tourism_sites');
+                          } else if (map.hasLayer(droughtLayer)) {
+                              getFeatureInfo(e, 'click', 'ne:drought_areas');
+                          } else if (map.hasLayer(desertLayer)) {
+                              getFeatureInfo(e, 'click', 'ne:desertification');
+                          }
+                      });
+
+                      // 6. Add click handler for Tunisia layer toggle
+                      document.getElementById('tunisia-layer').addEventListener('click', function(e) {
+                          e.preventDefault();
+                          toggleTunisiaLayer();
+                      });
+
+                      // 6. Add click handler for NDVI layer toggle
+                      document.getElementById('agriculture-layer1').addEventListener('click', function(e) {
+                          e.preventDefault();
+                          toggleNDVILayer();
+                      });
+
+                      // 6. Add click handler for Tourism layer toggle
+                      document.getElementById('tourism-layer1').addEventListener('click', function(e) {
+                          e.preventDefault();
+                          toggleTourismLayer();
+                      });
+
+                      // 6. Add click handler for Drought layer toggle
+                      document.getElementById('drought-layer1').addEventListener('click', function(e) {
+                          e.preventDefault();
+                          toggleDroughtLayer();
+                      });
+
+                      // 6. Add click handler for Desertification layer toggle
+                      document.getElementById('desert-layer1').addEventListener('click', function(e) {
+                          e.preventDefault();
+                          toggleDesertLayer();
+                      });
+
+                      // Helper function to get feature info
+                      function getFeatureInfo(e, action, layerName) {
+                          var point = map.latLngToContainerPoint(e.latlng, map.getZoom());
+                          var size = map.getSize();
+                          
+                          var params = {
+                              request: 'GetFeatureInfo',
+                              service: 'WMS',
+                              srs: 'EPSG:4326',
+                              styles: '',
+                              transparent: true,
+                              version: '1.1.1',
+                              format: 'image/png',
+                              bbox: map.getBounds().toBBoxString(),
+                              height: size.y,
+                              width: size.x,
+                              layers: layerName,
+                              query_layers: layerName,
+                              info_format: 'application/json',
+                              feature_count: 1,
+                              x: Math.round(point.x),
+                              y: Math.round(point.y)
+                          };
+
+                          var url = '/geoserver-proxy/?' + 
+                              Object.keys(params).map(key => 
+                                  encodeURIComponent(key) + '=' + encodeURIComponent(params[key])
+                              ).join('&');
+
+                          fetch(url)
+                              .then(response => response.json())
+                              .then(data => {
+                                  if (data.features && data.features.length > 0) {
+                                      const properties = data.features[0].properties;
+                                      if (action === 'hover') {
+                                          info.update(properties);
+                                      } else if (action === 'click') {
+                                          if (layerName === 'ne:Gouvernorats_TN') {
+                                              showGovernorateModal(properties, e.latlng);
+                                          } else if (layerName === 'ne:tourism_sites') {
+                                              showTourismModal(properties, e.latlng);
+                                          } else if (layerName === 'ne:drought_areas') {
+                                              showDroughtModal(properties, e.latlng);
+                                          } else if (layerName === 'ne:desertification') {
+                                              showDesertificationModal(properties, e.latlng);
+                                          } else {
+                                              showNDVIModal(properties, e.latlng);
+                                          }
+                                      }
+                                  } else {
+                                      if (action === 'hover') info.update();
+                                  }
+                              })
+                              .catch(error => {
+                                  console.error('Error:', error);
+                                  if (action === 'hover') info.update();
+                              });
                       }
-                    });
-                
-                    // Add event listeners for Agriculture layers
-                    document.getElementById("agriculture-layer1").addEventListener("click", function (event) {
-                      event.preventDefault();
-                      toggleLayer(agricultureLayer1, "Agriculture - MODIS Terra NDVI (Vegetation Health)", [65, 59, 80, 81, 56]);
-                    });
-                
-                    document.getElementById("agriculture-layer2").addEventListener("click", function (event) {
-                      event.preventDefault();
-                      toggleLayer(agricultureLayer2, "Agriculture - MODIS Terra Thermal Anomalies (Temperature Anomalies)", [75, 45, 30, 50, 100]);
-                    });
-                
-                    document.getElementById("agriculture-layer3").addEventListener("click", function (event) {
-                      event.preventDefault();
-                      toggleLayer(agricultureLayer3, "Agriculture - NOAA-21 Orbit Tracks (Satellite Observation Points)", [50, 60, 70, 85, 90]);
-                    });
-                
-                    // Add event listeners for Poverty layers
-                    document.getElementById("poverty-layer1").addEventListener("click", function (event) {
-                      event.preventDefault();
-                      toggleLayer(povertyLayer1, "Poverty - Global Poverty Estimates (SEDAC)", [30, 40, 50, 60, 70]);
-                    });
-                
-                    document.getElementById("poverty-layer2").addEventListener("click", function (event) {
-                      event.preventDefault();
-                      toggleLayer(povertyLayer2, "Poverty - Poverty Index", [10, 20, 30, 40, 50]);
-                    });
-                
-                    document.getElementById("poverty-layer3").addEventListener("click", function (event) {
-                      event.preventDefault();
-                      toggleLayer(povertyLayer3, "Poverty - Poverty Population Distribution", [100, 150, 200, 250, 300]);
-                    });
-                
-                    // Add event listeners for Water layers
-                    document.getElementById("water-layer1").addEventListener("click", function (event) {
-                      event.preventDefault();
-                      toggleLayer(waterLayer1, "Water - MODIS Terra NDWI (Water Availability)", [120, 110, 100, 90, 80]);
-                    });
-                
-                    document.getElementById("water-layer2").addEventListener("click", function (event) {
-                      event.preventDefault();
-                      toggleLayer(waterLayer2, "Water - Water Availability", [60, 70, 80, 90, 100]);
-                    });
-                
-                    document.getElementById("water-layer3").addEventListener("click", function (event) {
-                      event.preventDefault();
-                      toggleLayer(waterLayer3, "Water - Water Quality", [200, 180, 160, 140, 120]);
-                    });
-                
-                    // Function to toggle layers and update the chart
-                    function toggleLayer(layer, layerDescription, chartData) {
-                      if (map.hasLayer(layer)) {
-                        map.removeLayer(layer);
-                        myChart.data.datasets[0].data = chartData; // Update chart data
-                        myChart.update(); // Update the chart
-                      } else {
-                        map.addLayer(layer);
-                        myChart.data.datasets[0].data = chartData; // Update chart data
-                        myChart.update(); // Update the chart
+
+                      // Helper function to show NDVI modal
+                      async function showNDVIModal(properties, latlng) {
+                          const layerTab = document.querySelector('#layer-tab-pane');
+                          if (!layerTab) return;
+
+                          // Get NDVI values for all years
+                          const ndviValues = {
+                              2020: await getNDVIValueForLayer(latlng, ndviLayer2020),
+                              2021: await getNDVIValueForLayer(latlng, ndviLayer2021),
+                              2022: await getNDVIValueForLayer(latlng, ndviLayer2022),
+                              2023: await getNDVIValueForLayer(latlng, ndviLayer2023)
+                          };
+
+                          // Calculate percentage for current value (NDVI ranges from -1 to 1)
+                          const z = properties.z || 0;
+                          // Convert NDVI to percentage where -1 = 0%, 0 = 0%, and 1 = 100%
+                          const percentage = Math.max(0, (z * 100)).toFixed(1);
+
+                          // Create modal content
+                          layerTab.innerHTML = `
+                              <div class="ndvi-info">
+                                  <h4>NDVI Information</h4>
+                                  <p>Location: Longitude: ${properties.x}, Latitude: ${properties.y}</p>
+                                  <p>NDVI Value : ${z}</p>
+                                  <p>NDVI Percentage: ${percentage}%</p>
+                                  
+                                  <div class="year-slider-container">
+                                      <input type="range" min="2020" max="2023" value="${yearSlider ? yearSlider.value : '2023'}" 
+                                             class="year-slider" id="modalYearSlider">
+                                      <div class="year-display" id="modalYearDisplay">${yearSlider ? yearSlider.value : '2023'}</div>
+                                  </div>
+                                  
+                                  <div class="ndvi-chart-container">
+                                      <canvas id="ndviChart" width="400" height="200"></canvas>
+                                  </div>
+                              </div>
+                          `;
+
+                          // Initialize the modal year slider
+                          const modalYearSlider = document.getElementById('modalYearSlider');
+                          const modalYearDisplay = document.getElementById('modalYearDisplay');
+                          
+                          modalYearSlider.addEventListener('input', async function() {
+                              const selectedYear = this.value;
+                              modalYearDisplay.textContent = selectedYear;
+                              
+                              if (currentNdviLayer) {
+                                  map.removeLayer(currentNdviLayer);
+                              }
+                              
+                              switch(selectedYear) {
+                                  case '2020':
+                                      currentNdviLayer = ndviLayer2020;
+                                      break;
+                                  case '2021':
+                                      currentNdviLayer = ndviLayer2021;
+                                      break;
+                                  case '2022':
+                                      currentNdviLayer = ndviLayer2022;
+                                      break;
+                                  case '2023':
+                                      currentNdviLayer = ndviLayer2023;
+                                      break;
+                              }
+                              
+                              if (currentNdviLayer) {
+                                  map.addLayer(currentNdviLayer);
+                                  // Update the displayed values
+                                  const newZ = await getNDVIValueForLayer(latlng, currentNdviLayer);
+                                  const newPercentage = Math.max(0, (newZ * 100)).toFixed(1);
+                                  
+                                  const valueElement = layerTab.querySelector('p:nth-child(3)');
+                                  const percentageElement = layerTab.querySelector('p:nth-child(4)');
+                                  
+                                  if (valueElement && percentageElement) {
+                                      valueElement.textContent = `NDVI Value : ${newZ}`;
+                                      percentageElement.textContent = `NDVI Percentage: ${newPercentage}%`;
+                                  }
+                              }
+                          });
+
+                          // Create the NDVI evolution chart
+                          const ctx = document.getElementById('ndviChart').getContext('2d');
+                          new Chart(ctx, {
+                              type: 'line',
+                              data: {
+                                  labels: Object.keys(ndviValues),
+                                  datasets: [{
+                                      label: 'NDVI Evolution',
+                                      data: Object.values(ndviValues),
+                                      borderColor: '#696cff',
+                                      backgroundColor: 'rgba(105, 108, 255, 0.2)',
+                                      pointBackgroundColor: '#696cff',
+                                      pointBorderColor: '#fff',
+                                      pointHoverBackgroundColor: '#fff',
+                                      pointHoverBorderColor: '#696cff',
+                                      fill: true,
+                                      tension: 0.4
+                                  }]
+                              },
+                              options: {
+                                  scales: {
+                                      y: {
+                                          beginAtZero: true,
+                                          title: {
+                                              display: true,
+                                              text: 'NDVI Value'
+                                          }
+                                      },
+                                      x: {
+                                          title: {
+                                              display: true,
+                                              text: 'Year'
+                                          }
+                                      }
+                                  },
+                                  plugins: {
+                                      legend: {
+                                          display: true,
+                                          position: 'top'
+                                      },
+                                      tooltip: {
+                                          callbacks: {
+                                              label: function(context) {
+                                                  const value = context.raw;
+                                                  const percentage = Math.max(0, (value * 100)).toFixed(1);
+                                                  return `NDVI: ${value.toFixed(3)} (${percentage}%)`;
+                                              }
+                                          }
+                                      }
+                                  }
+                              }
+                          });
+
+                          showRightModal('layer');
                       }
-                    }
-                  });
+
+                      // Helper function to show governorate modal
+                      function showGovernorateModal(properties, latlng) {
+                          const layerTab = document.querySelector('#layer-tab-pane');
+                          if (!layerTab) return;
+
+                          layerTab.innerHTML = `
+                              <div class="governorate-info">
+                                  <h4>Governorate Information</h4>
+                                  <p><strong>Name:</strong> ${properties.name_fr}</p>
+                                  <p><strong>Reference Code:</strong> ${properties.REF_TN_COD}</p>
+                                  <p><strong>Coordinates:</strong> ${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)}</p>
+                              </div>
+                          `;
+
+                          showRightModal('layer');
+                      }
+
+                      // Helper function to show tourism modal
+                      function showTourismModal(properties, latlng) {
+                          const layerTab = document.querySelector('#layer-tab-pane');
+                          if (!layerTab) return;
+
+                          layerTab.innerHTML = `
+                              <div class="tourism-info">
+                                  <h4>Tourism Information</h4>
+                                  <p><strong>Name:</strong> ${properties.name}</p>
+                                  <p><strong>Location:</strong> ${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)}</p>
+                              </div>
+                          `;
+
+                          showRightModal('layer');
+                      }
+
+                      // Helper function to show drought modal
+                      function showDroughtModal(properties, latlng) {
+                          const layerTab = document.querySelector('#layer-tab-pane');
+                          if (!layerTab) return;
+
+                          layerTab.innerHTML = `
+                              <div class="drought-info">
+                                  <h4>Drought Information</h4>
+                                  <p><strong>Severity:</strong> ${properties.severity}</p>
+                                  <p><strong>Location:</strong> ${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)}</p>
+                              </div>
+                          `;
+
+                          showRightModal('layer');
+                      }
+
+                      // Helper function to show desertification modal
+                      function showDesertificationModal(properties, latlng) {
+                          const layerTab = document.querySelector('#layer-tab-pane');
+                          if (!layerTab) return;
+
+                          layerTab.innerHTML = `
+                              <div class="desertification-info">
+                                  <h4>Desertification Information</h4>
+                                  <p><strong>Severity:</strong> ${properties.severity}</p>
+                                  <p><strong>Location:</strong> ${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)}</p>
+                              </div>
+                          `;
+
+                          showRightModal('layer');
+                      }
+
+                      // Helper function to get feature info for a specific layer
+                      async function getNDVIValueForLayer(latlng, layer) {
+                          const point = map.latLngToContainerPoint(latlng, map.getZoom());
+                          const size = map.getSize();
+                          
+                          const params = {
+                              request: 'GetFeatureInfo',
+                              service: 'WMS',
+                              srs: 'EPSG:4326',
+                              styles: '',
+                              transparent: true,
+                              version: '1.1.1',
+                              format: 'image/png',
+                              bbox: map.getBounds().toBBoxString(),
+                              height: size.y,
+                              width: size.x,
+                              layers: layer.options.layers,
+                              query_layers: layer.options.layers,
+                              info_format: 'application/json',
+                              feature_count: 1,
+                              x: Math.round(point.x),
+                              y: Math.round(point.y)
+                          };
+
+                          const url = '/geoserver-proxy/?' + 
+                              Object.keys(params).map(key => 
+                                  encodeURIComponent(key) + '=' + encodeURIComponent(params[key])
+                              ).join('&');
+
+                          try {
+                              const response = await fetch(url);
+                              const data = await response.json();
+                              if (data.features && data.features.length > 0) {
+                                  return data.features[0].properties.z || 0;
+                              }
+                              return 0;
+                          } catch (error) {
+                              console.error('Error:', error);
+                              return 0;
+                          }
+                      }
+
+                      // Helper function to toggle Tunisia layer
+                      function toggleTunisiaLayer() {
+                          if (map.hasLayer(tunisiaLayer)) {
+                              map.removeLayer(tunisiaLayer);
+                              document.querySelector('#tunisia-layer').parentElement.classList.remove('active');
+                          } else {
+                              map.addLayer(tunisiaLayer);
+                              tunisiaLayer.bringToFront();
+                              document.querySelector('#tunisia-layer').parentElement.classList.add('active');
+                          }
+                      }
+
+                      // Helper function to toggle NDVI layer
+                      function toggleNDVILayer() {
+                          const yearSelect = document.getElementById('ndviYearSwitcher');
+                          const selectedYear = yearSelect ? yearSelect.value : '2023'; // Default to 2023 if no selection
+                          
+                          if (currentNdviLayer && map.hasLayer(currentNdviLayer)) {
+                              map.removeLayer(currentNdviLayer);
+                              document.querySelector('#agriculture-layer1').parentElement.classList.remove('active');
+                              currentNdviLayer = null;
+                          } else {
+                              // Add the layer for the selected year
+                              switch(selectedYear) {
+                                  case '2020':
+                                      currentNdviLayer = ndviLayer2020;
+                                      break;
+                                  case '2021':
+                                      currentNdviLayer = ndviLayer2021;
+                                      break;
+                                  case '2022':
+                                      currentNdviLayer = ndviLayer2022;
+                                      break;
+                                  case '2023':
+                                      currentNdviLayer = ndviLayer2023;
+                                      break;
+                              }
+                              
+                              if (currentNdviLayer) {
+                                  map.addLayer(currentNdviLayer);
+                                  document.querySelector('#agriculture-layer1').parentElement.classList.add('active');
+                              }
+                          }
+                      }
+
+                      // Helper function to toggle Tourism layer
+                      function toggleTourismLayer() {
+                          if (map.hasLayer(tourismLayer)) {
+                              map.removeLayer(tourismLayer);
+                              document.querySelector('#tourism-layer1').parentElement.classList.remove('active');
+                          } else {
+                              map.addLayer(tourismLayer);
+                              tourismLayer.bringToFront();
+                              document.querySelector('#tourism-layer1').parentElement.classList.add('active');
+                          }
+                      }
+
+                      // Helper function to toggle Drought layer
+                      function toggleDroughtLayer() {
+                          if (map.hasLayer(droughtLayer)) {
+                              map.removeLayer(droughtLayer);
+                              document.querySelector('#drought-layer1').parentElement.classList.remove('active');
+                          } else {
+                              map.addLayer(droughtLayer);
+                              droughtLayer.bringToFront();
+                              document.querySelector('#drought-layer1').parentElement.classList.add('active');
+                          }
+                      }
+
+                      // Helper function to toggle Desertification layer
+                      function toggleDesertLayer() {
+                          if (map.hasLayer(desertLayer)) {
+                              map.removeLayer(desertLayer);
+                              document.querySelector('#desert-layer1').parentElement.classList.remove('active');
+                          } else {
+                              map.addLayer(desertLayer);
+                              desertLayer.bringToFront();
+                              document.querySelector('#desert-layer1').parentElement.classList.add('active');
+                          }
+                      }
+
+                      // Initialize tourism layer
+                      tourismLayer = L.tileLayer.wms('http://localhost:8080/geoserver/ne/wms', {
+                          layers: 'ne:tourism_sites',
+                          format: 'image/png',
+                          transparent: true,
+                          version: '1.1.0'
+                      });
+
+                      // Initialize drought layer
+                      droughtLayer = L.tileLayer.wms('http://localhost:8080/geoserver/ne/wms', {
+                          layers: 'ne:drought_areas',
+                          format: 'image/png',
+                          transparent: true,
+                          version: '1.1.0'
+                      });
+
+                      // Initialize desertification layer
+                      desertLayer = L.tileLayer.wms('http://localhost:8080/geoserver/ne/wms', {
+                          layers: 'ne:desertification',
+                          format: 'image/png',
+                          transparent: true,
+                          version: '1.1.0'
+                      });
+                  }
                 </script>
                 
-                  <canvas id="myChart" width="400" height="200"></canvas>
-
                 </div>
                 <!--/ Order Statistics -->
               </div>
             </div>
             <!-- / Content -->
 
-            <!-- Footer -->
-            <footer class="content-footer footer bg-footer-theme">
-              <div class="container-xxl d-flex flex-wrap justify-content-between py-2 flex-md-row flex-column">
-                <div class="mb-2 mb-md-0">
-                  ©
-                  <script>
-                    document.write(new Date().getFullYear());
-                  </script>
-                  , made with ❤️ by
-                  <a href="https://themeselection.com" target="_blank" class="footer-link fw-bolder">ThemeSelection</a>
+            <!-- Right Modal -->
+            <div class="right-modal" id="rightModal">
+              <div class="slide-arrow" onclick="toggleSlide()">
+                <i class="bx bx-chevron-left"></i>
+              </div>
+              <div class="right-modal-content">
+                <div class="right-modal-header">
+                  <h5 class="modal-title" id="modalTitle">Information</h5>
+                  <button type="button" class="btn-close" onclick="closeRightModal()"></button>
                 </div>
-                <div>
-                  <a href="https://themeselection.com/license/" class="footer-link me-4" target="_blank">License</a>
-                  <a href="https://themeselection.com/" target="_blank" class="footer-link me-4">More Themes</a>
+                <div class="right-modal-body">
+                  <!-- Navigation Tabs -->
+                  <ul class="nav nav-tabs mb-3" id="modalTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                      <button class="nav-link active" id="location-tab" data-bs-toggle="tab" data-bs-target="#location-content" type="button" role="tab">
+                        <i class='bx bx-map-pin'></i> Location
+                      </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                      <button class="nav-link" id="layer-tab" data-bs-toggle="tab" data-bs-target="#layer-content" type="button" role="tab">
+                        <i class='bx bx-layer'></i> Layer
+                      </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                      <button class="nav-link" id="markers-tab" data-bs-toggle="tab" data-bs-target="#markers-content" type="button" role="tab">
+                        <i class='bx bx-map'></i> Markers
+                      </button>
+                    </li>
+                  </ul>
 
-                  <a
-                    href="https://themeselection.com/demo/sneat-bootstrap-html-admin-template/documentation/"
-                    target="_blank"
-                    class="footer-link me-4"
-                    >Documentation</a
-                  >
+                  <!-- Tab Content -->
+                  <div class="tab-content" id="modalTabContent">
+                    <!-- Location Tab -->
+                    <div class="tab-pane fade show active" id="location-content" role="tabpanel">
+                      <div id="locationDetails"></div>
+                    </div>
 
-                  <a
-                    href="https://github.com/themeselection/sneat-html-admin-template-free/issues"
-                    target="_blank"
-                    class="footer-link me-4"
-                    >Support</a
-                  >
+                    <!-- Layer Tab -->
+                    <div class="tab-pane fade" id="layer-content" role="tabpanel">
+                      <div id="layer-tab-pane"></div>
+                    </div>
+
+                    <!-- Markers Tab -->
+                    <div class="tab-pane fade" id="markers-content" role="tabpanel">
+                      <div class="marker-list">
+                        <div id="markersList"></div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </footer>
-            <!-- / Footer -->
+            </div>
+
+            <script>
+              // Initialize the charts
+              var lineChart = null;
+              var radarChart = null;
+
+              function initializeCharts() {
+                const lineCtx = document.getElementById('lineChart').getContext('2d');
+                const radarCtx = document.getElementById('radarChart').getContext('2d');
+
+                lineChart = new Chart(lineCtx, {
+                  type: 'line',
+                  data: {
+                    labels: ['January', 'February', 'March', 'April', 'May', 'June'],
+                    datasets: [{
+                      label: 'Time Series Data',
+                      data: [],
+                      borderColor: '#696cff',
+                      tension: 0.4
+                    }]
+                  },
+                  options: {
+                    responsive: true,
+                    plugins: {
+                      title: {
+                        display: true,
+                        text: 'Monthly Trend'
+                      }
+                    }
+                  }
+                });
+
+                radarChart = new Chart(radarCtx, {
+                  type: 'radar',
+                  data: {
+                    labels: ['Coverage', 'Intensity', 'Variability', 'Quality', 'Confidence'],
+                    datasets: [{
+                      label: 'Layer Metrics',
+                      data: [],
+                      backgroundColor: 'rgba(105, 108, 255, 0.2)',
+                      borderColor: '#696cff',
+                      pointBackgroundColor: '#696cff'
+                    }]
+                  },
+                  options: {
+                    responsive: true,
+                    plugins: {
+                      title: {
+                        display: true,
+                        text: 'Layer Metrics'
+                      }
+                    },
+                    scales: {
+                      r: {
+                        min: 0,
+                        max: 100
+                      }
+                    }
+                  }
+                });
+              }
+
+              function toggleSlide() {
+                const modal = document.getElementById('rightModal');
+                if (modal.classList.contains('collapsed')) {
+                  modal.classList.remove('collapsed');
+                  modal.classList.add('show');
+                } else {
+                  closeRightModal();
+                }
+              }
+
+              function showRightModal(type = 'layer') {
+                const modal = document.getElementById('rightModal');
+                
+                // Show the modal
+                modal.classList.add('show');
+                modal.classList.remove('collapsed');
+
+                // Switch to appropriate tab based on type
+                const tabToShow = type === 'location' ? 'location-tab' : 
+                                type === 'markers' ? 'markers-tab' : 'layer-tab';
+                
+                const tab = document.getElementById(tabToShow);
+                const tabInstance = new bootstrap.Tab(tab);
+                tabInstance.show();
+              }
+
+              function closeRightModal() {
+                const modal = document.getElementById('rightModal');
+                modal.classList.remove('show');
+                modal.classList.remove('collapsed');
+              }
+
+              function updateCharts(layerName, timeSeriesData, metricsData) {
+                // Update line chart
+                lineChart.data.datasets[0].data = timeSeriesData;
+                lineChart.update();
+
+                // Update radar chart
+                radarChart.data.datasets[0].data = metricsData;
+                radarChart.update();
+
+                // Update statistics
+                document.getElementById('meanValue').textContent = 
+                  Math.round(timeSeriesData.reduce((a, b) => a + b, 0) / timeSeriesData.length);
+                document.getElementById('coverage').textContent = 
+                  Math.round(metricsData[0]) + '%';
+                document.getElementById('lastUpdated').textContent = 
+                  new Date().toLocaleDateString();
+
+                // Update detailed stats table
+                const statsTable = document.getElementById('detailedStats');
+                statsTable.innerHTML = '';
+
+                const metrics = ['Coverage', 'Intensity', 'Variability', 'Quality', 'Confidence'];
+                metricsData.forEach((value, index) => {
+                  const row = document.createElement('tr');
+                  row.innerHTML = `
+                    <td>${metrics[index]}</td>
+                    <td><strong>${value}%</strong></td>
+                    <td>
+                      <div class="d-flex align-items-center gap-2">
+                        <i class="bx ${value >= 50 ? 'bx-trending-up text-success' : 'bx-trending-down text-danger'}"></i>
+                        <span class="${value >= 50 ? 'text-success' : 'text-danger'}">${value >= 50 ? '+' : '-'}${Math.abs(value - 50)}%</span>
+                      </div>
+                    </td>
+                  `;
+                  statsTable.appendChild(row);
+                });
+
+                // Update modal title
+                document.getElementById('modalTitle').textContent = layerName;
+              }
+
+              // Initialize charts when the document is ready
+              document.addEventListener('DOMContentLoaded', function() {
+                initializeCharts();
+              });
+            </script>
+
+            <script>
+              // Add this function for layer search
+              function filterLayers(searchText) {
+                const menuItems = document.querySelectorAll('.menu-item');
+                const searchTerm = searchText.toLowerCase();
+                
+                // First collapse all menus
+                menuItems.forEach(item => {
+                  if (item.querySelector('.menu-sub')) {
+                    item.classList.remove('open');
+                  }
+                });
+
+                if (searchTerm === '') {
+                  // If search is empty, show all items and restore normal state
+                  menuItems.forEach(item => {
+                    item.style.display = '';
+                    if (item.classList.contains('active')) {
+                      item.classList.add('open');
+                    }
+                  });
+                  return;
+                }
+
+                // For non-empty search
+                menuItems.forEach(item => {
+                  const menuText = item.textContent.toLowerCase();
+                  const isSubmenu = item.querySelector('.menu-sub');
+                  const isParentMenu = item.parentElement.classList.contains('menu-inner');
+                  
+                  if (isParentMenu) {
+                    // This is a main category (Agriculture, Poverty, Water)
+                    const hasMatchingChild = Array.from(item.querySelectorAll('.menu-item'))
+                      .some(child => child.textContent.toLowerCase().includes(searchTerm));
+                    
+                    if (menuText.includes(searchTerm) || hasMatchingChild) {
+                      item.style.display = '';
+                      item.classList.add('open'); // Expand the menu
+                    } else {
+                      item.style.display = 'none';
+                    }
+                  } else if (!isSubmenu) {
+                    // This is a layer item
+                    if (menuText.includes(searchTerm)) {
+                      item.style.display = '';
+                      // Show and expand parent menu
+                      const parentMenu = item.closest('.menu-item');
+                      if (parentMenu) {
+                        parentMenu.style.display = '';
+                        parentMenu.classList.add('open');
+                      }
+                    } else {
+                      item.style.display = 'none';
+                    }
+                  }
+                });
+              }
+
+              // Add event listener to clear search when clicking outside
+              document.addEventListener('click', function(event) {
+                const searchInput = document.getElementById('searchInput');
+                const isClickInside = searchInput.contains(event.target);
+                
+                if (!isClickInside && searchInput.value === '') {
+                  filterLayers('');
+                }
+              });
+            </script>
+
+            <script>
+              // Initialize year slider functionality
+              const yearSlider = document.getElementById('yearSlider');
+              const yearDisplay = document.getElementById('yearDisplay');
+              
+              if (yearSlider && yearDisplay) {
+                yearSlider.addEventListener('input', function() {
+                    const selectedYear = this.value;
+                    yearDisplay.textContent = selectedYear;
+                    
+                    if (currentNdviLayer) {
+                        map.removeLayer(currentNdviLayer);
+                    }
+                    
+                    switch(selectedYear) {
+                        case '2020':
+                            currentNdviLayer = ndviLayer2020;
+                            break;
+                        case '2021':
+                            currentNdviLayer = ndviLayer2021;
+                            break;
+                        case '2022':
+                            currentNdviLayer = ndviLayer2022;
+                            break;
+                        case '2023':
+                            currentNdviLayer = ndviLayer2023;
+                            break;
+                    }
+                    
+                    if (currentNdviLayer) {
+                        map.addLayer(currentNdviLayer);
+                    }
+                });
+              }
+            </script>
+
+            <script>
+              // Add click handler for WMS layer info
+              document.addEventListener("DOMContentLoaded", function () {
+                var map = L.map('map', {
+                  zoomControl: false,
+                  doubleClickZoom: true,
+                  scrollWheelZoom: true
+                }).setView([36.5, 10.5], 8);
+
+                var tunisiaLayer = L.tileLayer.wms('http://localhost:8080/geoserver/ne/wms?', {
+                  layers: 'ne:Gouvernorats_TN',
+                  format: 'image/png',
+                  styles: 'Gouvernorats_TN_Style',
+                  transparent: true,
+                  attribution: 'GeoServer'
+                });
+
+                map.on('click', function(e) {
+                  console.log('Map clicked at:', e.latlng);
+                  
+                  if (!map.hasLayer(tunisiaLayer)) {
+                    console.log('Tunisia layer is not active');
+                    return;
+                  }
+                  console.log('Tunisia layer is active, proceeding with GetFeatureInfo');
+
+                  var point = map.latLngToContainerPoint(e.latlng, map.getZoom());
+                  var size = map.getSize();
+                  
+                  var params = {
+                    request: 'GetFeatureInfo',
+                    service: 'WMS',
+                    srs: 'EPSG:4326',
+                    styles: '',
+                    transparent: true,
+                    version: '1.1.1',
+                    format: 'image/png',
+                    bbox: map.getBounds().toBBoxString(),
+                    height: size.y,
+                    width: size.x,
+                    layers: 'ne:Gouvernorats_TN',
+                    query_layers: 'ne:Gouvernorats_TN',
+                    info_format: 'application/json',
+                    feature_count: 1,
+                    x: Math.round(point.x),
+                    y: Math.round(point.y)
+                  };
+
+                  // Use Django proxy instead of direct GeoServer URL
+                  var url = '/geoserver-proxy/?' + 
+                    Object.keys(params).map(key => 
+                      encodeURIComponent(key) + '=' + encodeURIComponent(params[key])
+                    ).join('&');
+                    
+                  console.log('Requesting URL:', url);
+
+                  fetch(url)
+                    .then(response => {
+                      console.log('Response status:', response.status);
+                      return response.json();
+                    })
+                    .then(data => {
+                      console.log('Received data:', data);
+                      
+                      if (data.features && data.features.length > 0) {
+                        const feature = data.features[0];
+                        const properties = feature.properties;
+                        console.log('Feature properties:', properties);
+                        
+                        // Create alert message with the specific properties
+                        let alertMessage = 'Governorate Information:\n\n';
+                        
+                        // Add French name if available
+                        if (properties.name_fr) {
+                          alertMessage += `Name (FR): ${properties.name_fr}\n`;
+                        }
+                        
+                        // Add reference code if available
+                        if (properties.REF_TN_COD) {
+                          alertMessage += `Reference Code: ${properties.REF_TN_COD}\n`;
+                        }
+                        
+                        // Add geometry type
+                        if (feature.geometry) {
+                          alertMessage += `Geometry Type: ${feature.geometry.type}`;
+                        }
+                        
+                        // Show the alert with the information
+                        alert(alertMessage);
+                      } else {
+                        console.log('No features found in response');
+                      }
+                    })
+                    .catch(error => {
+                      console.error('Error:', error);
+                      alert('Error fetching governorate information');
+                    });
+                });
+
+                // Helper function to format property names
+                function formatPropertyName(name) {
+                  return name
+                    .replace(/_/g, ' ')  // Replace underscores with spaces
+                    .split(' ')
+                    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                    .join(' ');
+                }
+              });
+            </script>
+
+            <script>
+              // Extract NDVI data for the closest point using coordinates
+              const ndviData = {};
+              let minDistance = Infinity;
+              let closestPoint = null;
+
+              features.forEach(feature => {
+                  const distance = Math.sqrt(
+                      Math.pow(feature.properties.Latitude - latlng.lat, 2) +
+                      Math.pow(feature.properties.Longitude - latlng.lng, 2)
+                  );
+                  if (distance < minDistance) {
+                      minDistance = distance;
+                      closestPoint = feature.properties;
+                  }
+              });
+
+              if (closestPoint) {
+                  ndviData[2020] = closestPoint.NDVI_2020 || 0;
+                  ndviData[2021] = closestPoint.NDVI_2021 || 0;
+                  ndviData[2022] = closestPoint.NDVI_2022 || 0;
+                  ndviData[2023] = closestPoint.NDVI || 0; // NDVI is for 2023
+              }
+
+              // Log extracted NDVI data for debugging
+              console.log('Extracted NDVI Data:', ndviData);
+            </script>
 
             <div class="content-backdrop fade"></div>
           </div>
